@@ -4,11 +4,11 @@ import android.view.View
 import android.view.ViewGroup
 
 import android.widget.TextView
+import android.widget.Button
 import androidx.recyclerview.widget.DiffUtil
 import androidx.recyclerview.widget.ListAdapter
 import androidx.recyclerview.widget.RecyclerView
 import com.vincentlaur.todo.R
-import org.w3c.dom.Text
 
 object TaskDiffCallBack : DiffUtil.ItemCallback<Task>() {
     override fun areItemsTheSame(oldItem: Task, newItem: Task) : Boolean {
@@ -21,6 +21,9 @@ object TaskDiffCallBack : DiffUtil.ItemCallback<Task>() {
 }
 
 class TaskListAdapter : ListAdapter<Task,TaskListAdapter.TaskViewHolder>(TaskDiffCallBack) {
+    // Déclaration de la variable lambda dans l'adapter:
+    var onClickDelete: (Task) -> Unit = {}
+    var onClickEdit: (Task) -> Unit = {}
     // on utilise inner ici afin d'avoir accès aux propriétés de l'adapter directement
     inner class TaskViewHolder(itemView: View) : RecyclerView.ViewHolder(itemView) {
         fun bind(task: Task) {
@@ -28,7 +31,10 @@ class TaskListAdapter : ListAdapter<Task,TaskListAdapter.TaskViewHolder>(TaskDif
             textViewTitle.text = task.title
             val textViewDescription = itemView.findViewById<TextView>(R.id.task_description)
             textViewDescription.text = task.description
-
+            val buttonDelete = itemView.findViewById<Button>(R.id.buttonDelete)
+            buttonDelete.setOnClickListener { onClickDelete(task) }
+            val buttonModify = itemView.findViewById<Button>(R.id.buttonModify)
+            buttonModify.setOnClickListener { onClickEdit(task) }
         }
     }
 
@@ -41,3 +47,5 @@ class TaskListAdapter : ListAdapter<Task,TaskListAdapter.TaskViewHolder>(TaskDif
         holder.bind(currentList[position])
     }
 }
+
+
