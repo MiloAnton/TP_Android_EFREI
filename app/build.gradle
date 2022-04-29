@@ -33,7 +33,8 @@ android {
 }
 
 dependencies {
-    implementation 'androidx.fragment:fragment-ktx:1.1.0'
+    implementation 'androidx.fragment:fragment-ktx:1.4.1'
+    implementation("io.coil-kt:coil:2.0.0-rc03")
     // Retrofit
     implementation 'com.squareup.retrofit2:retrofit:2.9.0'
     implementation 'com.squareup.okhttp3:logging-interceptor:5.0.0-alpha.3'
