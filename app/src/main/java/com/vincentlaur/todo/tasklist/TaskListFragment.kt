@@ -8,6 +8,7 @@ import android.view.ViewGroup
 import android.widget.TextView
 import androidx.activity.result.contract.ActivityResultContracts
 import androidx.fragment.app.Fragment
+import androidx.fragment.app.viewModels
 import androidx.lifecycle.lifecycleScope
 import androidx.recyclerview.widget.RecyclerView
 import com.google.android.material.floatingactionbutton.FloatingActionButton
@@ -17,28 +18,22 @@ import com.vincentlaur.todo.network.Api
 import kotlinx.coroutines.launch
 
 class TaskListFragment : Fragment() {
-    private var taskList = listOf(
-        Task(id = "id_1", title = "Tâche 1", description = "Description")
-    )
     private val adapter = TaskListAdapter()
+    private val viewModel: TasksListViewModel by viewModels()
     private lateinit var textUserName: TextView;
     val createTask = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val task = result.data?.getSerializableExtra("task") as Task? ?: return@registerForActivityResult
-        taskList = taskList + task
-        adapter.submitList(taskList)
+        viewModel.create(task)
     }
     val editTask = registerForActivityResult(ActivityResultContracts.StartActivityForResult()) { result ->
         val newTask = result.data?.getSerializableExtra("task") as Task
-        taskList = taskList.map { if (it.id == newTask.id) newTask else it }
-        adapter.submitList(taskList)
+        viewModel.update(newTask)
     }
-
     override fun onCreateView(
         inflater: LayoutInflater,
         container: ViewGroup?,
         savedInstanceState: Bundle?
     ): View? {
-        adapter.submitList(taskList)
         return inflater.inflate(R.layout.fragment_task_list, container, false)
     }
 
@@ -52,16 +47,21 @@ class TaskListFragment : Fragment() {
         button.setOnClickListener(){
             val intent = Intent(context, Form::class.java)
             createTask.launch(intent)
-            adapter.submitList(taskList)
         }
         adapter.onClickDelete = { task ->
-            taskList = taskList - task
-            adapter.submitList(taskList)
+            viewModel.delete(task)
         }
         adapter.onClickEdit = { task ->
             val intent = Intent(context, Form::class.java)
             intent.putExtra("task", task)
             editTask.launch(intent)
+        }
+        lifecycleScope.launch { // on lance une coroutine car `collect` est `suspend`
+            viewModel.tasksStateFlow.collect { newList ->
+                // cette lambda est executée à chaque fois que la liste est mise à jour dans le VM
+                // -> ici, on met à jour la liste dans l'adapter
+                adapter.submitList(newList)
+            }
         }
     }
 
@@ -71,6 +71,7 @@ class TaskListFragment : Fragment() {
         lifecycleScope.launch {
             val userInfo = Api.userWebService.getInfo().body()!!
             tmp.text = "Bonjour " + userInfo.firstName + " " + userInfo.lastName
+            viewModel.refresh()
         }
     }
 }
